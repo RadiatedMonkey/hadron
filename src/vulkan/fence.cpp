@@ -1,11 +1,11 @@
-#include <plaquette/vulkan/fence.hpp>
-#include <plaquette/vulkan/device.hpp>
-#include <plaquette/util.hpp>
+#include <hadron/vulkan/fence.hpp>
+#include <hadron/vulkan/device.hpp>
+#include <hadron/util.hpp>
 
 #include <volk.h>
 #include <spdlog/spdlog.h>
 
-namespace Plaq {
+namespace Hadron {
     Fence::Fence(std::shared_ptr<Device> device) : mDevice(std::move(device)) {
         VkFenceCreateInfo fenceCi = {};
         fenceCi.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;

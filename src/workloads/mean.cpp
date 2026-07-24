@@ -1,10 +1,10 @@
-#include <plaquette/workloads/mean.hpp>
-#include <plaquette/workloads/workload.hpp>
-#include <plaquette/vulkan/device.hpp>
-#include <plaquette/vulkan/pipeline.hpp>
-#include <plaquette/vulkan/storage.hpp>
-#include <plaquette/vulkan/fence.hpp>
-#include <plaquette/util.hpp>
+#include <hadron/workloads/mean.hpp>
+#include <hadron/workloads/workload.hpp>
+#include <hadron/vulkan/device.hpp>
+#include <hadron/vulkan/pipeline.hpp>
+#include <hadron/vulkan/storage.hpp>
+#include <hadron/vulkan/fence.hpp>
+#include <hadron/util.hpp>
 
 #include <array>
 #include <iostream>
@@ -24,9 +24,7 @@ struct MeanConstants {
     uint32_t dispatched;
 };
 
-namespace Plaq::Workload {
-    static constexpr const char* RAND_SHADER_PATH = "/shaders/rand.spv";
-    static constexpr const char* MEAN_SHADER_PATH = "/shaders/mean.spv";
+namespace Hadron::Workload {
     static constexpr uint32_t NUM_COUNT = 4096;
     static constexpr uint32_t WORKGROUP_SIZE = 256;
     static constexpr uint32_t DISPATCH_COUNT = (NUM_COUNT + WORKGROUP_SIZE - 1) / WORKGROUP_SIZE;
@@ -54,8 +52,13 @@ namespace Plaq::Workload {
     }
 
     void computeUniformMean(const WorkloadInfo& info, uint64_t seed) {
+        spdlog::error("Source dir is: {}", SOURCE_DIR);
+
+        static constexpr const char* RAND_PATH = SOURCE_DIR "/src/shaders/workloads/rand";
+        static constexpr const char* MEAN_PATH = SOURCE_DIR "/src/shaders/workloads/mean";
+
         PipelineConfig pipelineConfig = {
-            .shaderConfig = { .moduleName = "../src/shaders/workloads/mean", .entryPoint = nullptr }
+            .shaderConfig = { .moduleName = RAND_PATH, .entryPoint = nullptr }
         };
 
         auto cmds = info.device->createCmdBuffer();
@@ -63,9 +66,8 @@ namespace Plaq::Workload {
 
         auto randPipeline = info.device->createPipeline(pipelineConfig);
 
+        pipelineConfig.shaderConfig.moduleName = MEAN_PATH;
         auto meanPipeline = info.device->createPipeline(pipelineConfig);
-
-        return;
 
         auto scratchBuffer = info.device->createStorageBuffer<double>(NUM_COUNT, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
         auto hostRngBuffer = info.device->createHostBuffer<double>(NUM_COUNT, VK_BUFFER_USAGE_TRANSFER_DST_BIT);

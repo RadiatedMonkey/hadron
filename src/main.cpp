@@ -1,7 +1,7 @@
-#include <plaquette/vulkan/instance.hpp>
-#include <plaquette/vulkan/device.hpp>
-#include <plaquette/workloads/mean.hpp>
-#include <plaquette/workloads/workload.hpp>
+#include <hadron/vulkan/instance.hpp>
+#include <hadron/vulkan/device.hpp>
+#include <hadron/workloads/mean.hpp>
+#include <hadron/workloads/workload.hpp>
 
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
@@ -13,14 +13,14 @@ int main() {
     spdlog::trace("Logger initialized");
 
     try {
-        auto instance = Plaq::Instance::create();
+        auto instance = Hadron::Instance::create();
         auto device = instance->createDevice();
 
-        Plaq::Workload::WorkloadInfo info = {
+        Hadron::Workload::WorkloadInfo info = {
             .device = device
         };
 
-        Plaq::Workload::computeUniformMean(info, 0);
+        Hadron::Workload::computeUniformMean(info, 0);
     } catch(const std::exception& e) {
         spdlog::error("exception: {}", e.what());
         return 1;

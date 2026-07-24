@@ -1,15 +1,15 @@
-#include <plaquette/vulkan/shader.hpp>
-#include <plaquette/vulkan/pipeline.hpp>
-#include <plaquette/vulkan/device.hpp>
-#include <plaquette/vulkan/instance.hpp>
-#include <plaquette/util.hpp>
+#include <hadron/vulkan/shader.hpp>
+#include <hadron/vulkan/pipeline.hpp>
+#include <hadron/vulkan/device.hpp>
+#include <hadron/vulkan/instance.hpp>
+#include <hadron/util.hpp>
 
 #include <volk.h>
 #include <spdlog/spdlog.h>
 
 #include <vector>
 
-namespace Plaq {
+namespace Hadron {
     Device::Device(std::shared_ptr<Instance> instance) : mInstance(std::move(instance)) {
         uint32_t count = 0;
         LOG_VKRESULT(
@@ -173,10 +173,12 @@ namespace Plaq {
 
         slang::TargetDesc shaderTarget = {};
         shaderTarget.format = SLANG_SPIRV;
+        shaderTarget.floatingPointMode = SlangFloatingPointMode::SLANG_FLOATING_POINT_MODE_PRECISE;
         shaderTarget.profile = mGlobalSession->findProfile("glsl_450");
 
         slang::SessionDesc sessionDesc = {};
         sessionDesc.searchPathCount = kShaderIncludePaths.size();
+        sessionDesc.allowGLSLSyntax = true;
         sessionDesc.searchPaths = kShaderIncludePaths.data();
         sessionDesc.targetCount = 1;
         sessionDesc.targets = &shaderTarget;

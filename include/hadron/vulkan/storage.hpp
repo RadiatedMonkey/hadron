@@ -1,15 +1,15 @@
 #pragma once
 
-#include <plaquette/vulkan/device.hpp>
-#include <plaquette/vulkan/pipeline.hpp>
-#include <plaquette/util.hpp>
+#include <hadron/vulkan/device.hpp>
+#include <hadron/vulkan/pipeline.hpp>
+#include <hadron/util.hpp>
 
 #include <memory>
 
 #include <spdlog/spdlog.h>
 #include <volk.h>
 
-namespace Plaq {
+namespace Hadron {
     class Device;
 
     template<typename T>

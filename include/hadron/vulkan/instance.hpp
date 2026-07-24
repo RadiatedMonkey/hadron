@@ -5,7 +5,7 @@
 #define VK_NO_PROTOTYPES
 #include <vulkan/vulkan.h>
 
-namespace Plaq {
+namespace Hadron {
     class Device;
 
     class Instance : public std::enable_shared_from_this<Instance> {

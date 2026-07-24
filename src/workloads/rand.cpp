@@ -1,10 +1,10 @@
-#include <plaquette/workloads/rand.hpp>
-#include <plaquette/workloads/workload.hpp>
-#include <plaquette/vulkan/device.hpp>
-#include <plaquette/vulkan/pipeline.hpp>
-#include <plaquette/vulkan/storage.hpp>
-#include <plaquette/vulkan/fence.hpp>
-#include <plaquette/util.hpp>
+#include <hadron/workloads/rand.hpp>
+#include <hadron/workloads/workload.hpp>
+#include <hadron/vulkan/device.hpp>
+#include <hadron/vulkan/pipeline.hpp>
+#include <hadron/vulkan/storage.hpp>
+#include <hadron/vulkan/fence.hpp>
+#include <hadron/util.hpp>
 
 #include <array>
 #include <iostream>
@@ -18,7 +18,7 @@ struct PushConstants {
     VkDeviceAddress outBuffer;
 };
 
-namespace Plaq::Workload {
+namespace Hadron::Workload {
     static constexpr const char* RAND_SHADER_PATH = "/shaders/rand.spv";
     static constexpr uint32_t NUM_COUNT = 4096;
     static constexpr uint32_t WORKGROUP_SIZE = 32;

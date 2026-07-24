@@ -6,9 +6,9 @@
 #define VK_NO_PROTOTYPES
 #include <vulkan/vulkan.h>
 
-#include <plaquette/vulkan/shader.hpp>
+#include <hadron/vulkan/shader.hpp>
 
-namespace Plaq {
+namespace Hadron {
     class Device;
     class Shader;
 

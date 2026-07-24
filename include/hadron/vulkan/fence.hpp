@@ -5,7 +5,7 @@
 
 #include <memory>
 
-namespace Plaq {
+namespace Hadron {
     class Device;
 
     class Fence {

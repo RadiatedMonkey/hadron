@@ -69,6 +69,10 @@ void computeWorkgroupMeans(
     // Only the first wave within the group gets to reduce.
     if (waveIndex == 0) {
         uint waveCount = WORKGROUP_SIZE / WaveGetLaneCount();
+        uint waveCount2 = WaveGetNumWaves();
+
+        printf("%i vs. %i\n", waveCount, waveCount2);
+
         uint lane = WaveGetLaneIndex();
 
         reduction = (lane < waveCount) ? sdata[lane] : 0.0f;
@@ -77,7 +81,6 @@ void computeWorkgroupMeans(
         if (lane == 0) {
             // Divide by `WORKGROUP_SIZE` to compute the average of this workgroup
             buffer[dispatchThreadID.x / WORKGROUP_SIZE] = reduction / WORKGROUP_SIZE;
-
             printf("wrote %lf\n", reduction / WORKGROUP_SIZE);
         }
     }

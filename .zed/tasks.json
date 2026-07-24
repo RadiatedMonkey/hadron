@@ -1,0 +1,10 @@
+[
+  {
+    "label": "CMake Build",
+    "command": "cmake",
+    "args": ["--build", "."],
+    "cwd": "$ZED_WORKTREE_ROOT/build",
+    "allow_concurrent_runs": false,
+    "hide": "never"
+  }
+]

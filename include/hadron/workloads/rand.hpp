@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace Plaq::Workload {
+namespace Hadron::Workload {
     struct WorkloadInfo;
 
     /// @brief Generates a large amount of random numbers on the GPU using the given seed,

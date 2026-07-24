@@ -9,12 +9,12 @@
 #include <slang/slang-com-ptr.h>
 #include <slang/slang.h>
 
-#include <plaquette/vulkan/fence.hpp>
-#include <plaquette/vulkan/command.hpp>
+#include <hadron/vulkan/fence.hpp>
+#include <hadron/vulkan/command.hpp>
 
-namespace Plaq {
+namespace Hadron {
     static constexpr std::array<const char*, 1> kShaderIncludePaths = {
-        "src/shaders"
+        SOURCE_DIR "/src/shaders"
     };
 
     static constexpr std::array<const char*, 4> kDeviceExtensions = {

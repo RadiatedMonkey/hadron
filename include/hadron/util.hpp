@@ -42,7 +42,7 @@
     }                                                                           \
 } while (false)
 
-namespace Plaq {
+namespace Hadron {
     template<typename F>
     concept RealFloat = std::is_same_v<F, float> || std::is_same_v<F, double>;
 }

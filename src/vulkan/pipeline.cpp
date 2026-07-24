@@ -1,8 +1,7 @@
-#include <plaquette/vulkan/pipeline.hpp>
-#include <plaquette/vulkan/device.hpp>
-#include <plaquette/vulkan/spirv_reflect.h>
-#include <plaquette/vulkan/shader.hpp>
-#include <plaquette/util.hpp>
+#include <hadron/vulkan/pipeline.hpp>
+#include <hadron/vulkan/device.hpp>
+#include <hadron/vulkan/shader.hpp>
+#include <hadron/util.hpp>
 
 #include <spdlog/spdlog.h>
 #include <volk.h>
@@ -11,7 +10,7 @@
 
 static constexpr uint32_t MAX_BINDLESS_RESOURCES = 100;
 
-namespace Plaq {
+namespace Hadron {
     ComputePipeline::ComputePipeline(std::shared_ptr<Device> device, const PipelineConfig& config) : mDevice(std::move(device)) {
         static constexpr uint32_t DESCRIPTOR_TYPE_COUNT = 2;
 

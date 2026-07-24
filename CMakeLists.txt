@@ -1,11 +1,12 @@
 cmake_minimum_required(VERSION 3.20)
-project(rt)
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "" FORCE)
+
+project(hadron)
 
 include(cmake/CPM.cmake)
 
 set(FETCHCONTENT_QUIET  FALSE CACHE BOOL "" FORCE)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "" FORCE)
-
 set(CMAKE_CXX_STANDARD 20)
 
 if(WIN32)
@@ -46,12 +47,7 @@ set(SOURCES
     src/workloads/mean.cpp
 )
 
-add_executable(rt ${SOURCES})
-target_include_directories(rt PRIVATE include)
-target_link_libraries(rt PRIVATE volk glfw spdlog slang)
-
-file(COPY_FILE
-  "${CMAKE_BINARY_DIR}/compile_commands.json"
-  "${CMAKE_SOURCE_DIR}/compile_commands.json"
-  ONLY_IF_DIFFERENT
-)
+add_executable(hadron ${SOURCES})
+target_include_directories(hadron PRIVATE include)
+target_compile_definitions(hadron PRIVATE SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+target_link_libraries(hadron PRIVATE volk glfw spdlog slang)

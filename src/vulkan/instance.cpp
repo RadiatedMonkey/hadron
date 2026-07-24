@@ -1,13 +1,13 @@
-#include <plaquette/vulkan/instance.hpp>
-#include <plaquette/vulkan/device.hpp>
-#include <plaquette/util.hpp>
+#include <hadron/vulkan/instance.hpp>
+#include <hadron/vulkan/device.hpp>
+#include <hadron/util.hpp>
 
 #include <iostream>
 
 #include <volk.h>
 #include <spdlog/spdlog.h>
 
-namespace Plaq {
+namespace Hadron {
     unsigned int debugCallback(
         VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
         VkDebugUtilsMessageTypeFlagsEXT messageTypes,

@@ -1,13 +1,13 @@
-#include <plaquette/vulkan/shader.hpp>
-#include <plaquette/vulkan/device.hpp>
-#include <plaquette/util.hpp>
+#include <hadron/vulkan/shader.hpp>
+#include <hadron/vulkan/device.hpp>
+#include <hadron/util.hpp>
 
 #include <array>
 
 #include <volk.h>
 #include <spdlog/spdlog.h>
 
-namespace Plaq {
+namespace Hadron {
     Shader::Shader(std::shared_ptr<Device> device, const ShaderConfig& config)
         : mDevice(std::move(device))
     {

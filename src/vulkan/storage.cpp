@@ -1,10 +1,10 @@
-#include <plaquette/vulkan/storage.hpp>
-#include <plaquette/vulkan/device.hpp>
+#include <hadron/vulkan/storage.hpp>
+#include <hadron/vulkan/device.hpp>
 
 #include <spdlog/spdlog.h>
 #include <volk.h>
 
-namespace Plaq {
+namespace Hadron {
     uint32_t findMemoryType(uint32_t typeBits, VkPhysicalDeviceMemoryProperties memProperties, VkMemoryPropertyFlags propertyFlags) {
         for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
             bool hardwareSupported = typeBits & (1 << i);

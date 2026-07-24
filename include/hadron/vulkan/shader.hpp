@@ -14,7 +14,7 @@ namespace slang {
     class IModule;
 }
 
-namespace Plaq {
+namespace Hadron {
     class Device;
 
     struct ShaderConfig {

@@ -2,11 +2,11 @@
 
 #include <memory>
 
-namespace Plaq {
+namespace Hadron {
     class Device;
 }
 
-namespace Plaq::Workload {
+namespace Hadron::Workload {
     struct WorkloadInfo {
         std::shared_ptr<Device> device;
     };

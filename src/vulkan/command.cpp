@@ -1,11 +1,11 @@
-#include <plaquette/vulkan/command.hpp>
-#include <plaquette/vulkan/device.hpp>
-#include <plaquette/util.hpp>
+#include <hadron/vulkan/command.hpp>
+#include <hadron/vulkan/device.hpp>
+#include <hadron/util.hpp>
 
 #include <volk.h>
 #include <spdlog/spdlog.h>
 
-namespace Plaq {
+namespace Hadron {
     VkCommandBuffer Commands::handle() {
         return mBuffer;
     }
