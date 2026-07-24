@@ -47,9 +47,11 @@ namespace Hadron {
         };
 
         diagnosticBlob = nullptr;
+        Slang::ComPtr<slang::IComponentType> composedProgram = nullptr;
+
         result = session->createCompositeComponentType(
             componentTypes.data(), componentTypes.size(),
-            mComposedProgram.writeRef(), diagnosticBlob.writeRef()
+            composedProgram.writeRef(), diagnosticBlob.writeRef()
         );
 
         if (diagnosticBlob != nullptr) {
@@ -63,9 +65,23 @@ namespace Hadron {
         LOG_SRESULT(result, "Failed to create composite component type");
 
         diagnosticBlob = nullptr;
+        result = composedProgram->link(mLinkedProgram.writeRef(), diagnosticBlob.writeRef());
+        if (diagnosticBlob != nullptr) {
+            spdlog::warn(
+                "While linking shader program: {}",
+                reinterpret_cast<const char*>(diagnosticBlob->getBufferPointer())
+            );
+        }
+
+        if (SLANG_FAILED(result)) {
+            spdlog::error("Failed to link shader program");
+            throw std::runtime_error("Failed to link shader program");
+        }
+
+        diagnosticBlob = nullptr;
         Slang::ComPtr<slang::IBlob> spirvCode = nullptr;
 
-        result = mComposedProgram->getEntryPointCode(
+        result = mLinkedProgram->getEntryPointCode(
             0, 0, spirvCode.writeRef(), diagnosticBlob.writeRef()
         );
 
@@ -81,7 +97,7 @@ namespace Hadron {
 
         spdlog::trace("Loaded SPIR-V entrypoint");
 
-        mLayout = mComposedProgram->getLayout(0, diagnosticBlob.writeRef());
+        mLayout = mLinkedProgram->getLayout(0, diagnosticBlob.writeRef());
 
         if (diagnosticBlob != nullptr) {
             spdlog::warn("Info while loading program layout: {}", reinterpret_cast<const char*>(diagnosticBlob->getBufferPointer()));
@@ -108,7 +124,7 @@ namespace Hadron {
     Shader::Shader(Shader&& other) noexcept :
         mDevice(std::move(other.mDevice)),
         mSlangModule(std::move(other.mSlangModule)),
-        mComposedProgram(std::move(other.mComposedProgram)),
+        mLinkedProgram(std::move(other.mLinkedProgram)),
         mEntryPoint(std::move(other.mEntryPoint))
     {
         mLayout = other.mLayout;

@@ -48,7 +48,7 @@ namespace Hadron {
 
         std::shared_ptr<Device> mDevice;
 
-        Slang::ComPtr<slang::IComponentType> mComposedProgram = nullptr;
+        Slang::ComPtr<slang::IComponentType> mLinkedProgram = nullptr;
         Slang::ComPtr<slang::IEntryPoint> mEntryPoint = nullptr;
         slang::ProgramLayout* mLayout = nullptr;
         slang::IModule* mSlangModule = nullptr;

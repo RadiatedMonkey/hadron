@@ -52,8 +52,6 @@ namespace Hadron::Workload {
     }
 
     void computeUniformMean(const WorkloadInfo& info, uint64_t seed) {
-        spdlog::error("Source dir is: {}", SOURCE_DIR);
-
         static constexpr const char* RAND_PATH = SOURCE_DIR "/src/shaders/workloads/rand";
         static constexpr const char* MEAN_PATH = SOURCE_DIR "/src/shaders/workloads/mean";
 

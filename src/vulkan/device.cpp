@@ -219,6 +219,9 @@ namespace Hadron {
             vkDestroyDevice(mDevice, nullptr);
             spdlog::debug("Destroyed logical device");
         }
+
+        mLocalSession = nullptr;        // Destroy explicitly to enforce order
+        mGlobalSession = nullptr;
     }
 
     VkDevice Device::handle() {

@@ -95,8 +95,8 @@ namespace Hadron {
 
         std::shared_ptr<Instance> mInstance = nullptr;
 
-        Slang::ComPtr<slang::ISession> mLocalSession;
         Slang::ComPtr<slang::IGlobalSession> mGlobalSession;
+        Slang::ComPtr<slang::ISession> mLocalSession;
 
         VkPhysicalDeviceMemoryProperties2 mMemProperties = {};
         VkPhysicalDeviceFeatures2 mFeatures = {};

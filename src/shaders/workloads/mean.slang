@@ -68,14 +68,9 @@ void computeWorkgroupMeans(
 
     // Only the first wave within the group gets to reduce.
     if (waveIndex == 0) {
-        uint waveCount = WORKGROUP_SIZE / WaveGetLaneCount();
-        uint waveCount2 = WaveGetNumWaves();
-
-        printf("%i vs. %i\n", waveCount, waveCount2);
-
         uint lane = WaveGetLaneIndex();
 
-        reduction = (lane < waveCount) ? sdata[lane] : 0.0f;
+        reduction = (lane < WaveGetNumWaves()) ? sdata[lane] : 0.0f;
         reduction = WaveActiveSum(reduction);
 
         if (lane == 0) {

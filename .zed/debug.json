@@ -2,12 +2,16 @@
   {
     "label": "Debug with LLDB",
     "adapter": "CodeLLDB",
-    "program": "$ZED_WORKTREE_ROOT/build/hadron",
+    "program": "$ZED_WORKTREE_ROOT/build/hadron.exe",
     "request": "launch",
     "build": {
       "command": "cmake",
       "args": ["--build", "."],
       "cwd": "$ZED_WORKTREE_ROOT/build"
-    }
+    },
+    "initCommands": [
+      "process handle SIGSEGV --stop true --pass false",
+      "target exception-breakpoint-set --language c++"
+    ]
   }
 ]
