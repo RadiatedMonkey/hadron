@@ -76,14 +76,7 @@ namespace Hadron {
         /// @warning The command buffer must be begun by the caller using `vkBeginCommandBuffer`.
         Commands createCmdBuffer();
 
-        /// @brief The properties of this device.
-        VkPhysicalDeviceProperties2 properties();
-
-        /// @brief The features of this device.
-        VkPhysicalDeviceFeatures2 features();
-
-        /// @brief The memory properties of this device.
-        VkPhysicalDeviceMemoryProperties2 memProperties();
+        VkPhysicalDevice physicalDevice();
 
         Slang::ComPtr<slang::ISession>& localSlangSession();
     private:
@@ -98,10 +91,7 @@ namespace Hadron {
         Slang::ComPtr<slang::IGlobalSession> mGlobalSession;
         Slang::ComPtr<slang::ISession> mLocalSession;
 
-        VkPhysicalDeviceMemoryProperties2 mMemProperties = {};
-        VkPhysicalDeviceFeatures2 mFeatures = {};
-        VkPhysicalDeviceProperties2 mProperties = {};
-
+        VkPhysicalDevice mPhysicalDevice;
         VkCommandPool mPool = VK_NULL_HANDLE;
         VkQueue mQueue = VK_NULL_HANDLE;
         VkDevice mDevice = VK_NULL_HANDLE;

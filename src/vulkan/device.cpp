@@ -37,7 +37,6 @@ namespace Hadron {
 
             if (properties.properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
                 chosenAdapter = adapter;
-                mProperties = properties;
 
                 break;
             }
@@ -113,6 +112,8 @@ namespace Hadron {
             throw std::runtime_error("This device does not support bindless descriptor sets");
         }
 
+        mPhysicalDevice = chosenAdapter;
+
         spdlog::trace("Adapter supports bindless descriptor sets");
 
         VkDeviceCreateInfo deviceCi = {};
@@ -130,12 +131,6 @@ namespace Hadron {
         );
 
         spdlog::debug("Created device");
-
-        mFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-        mMemProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2;
-
-        vkGetPhysicalDeviceFeatures2(chosenAdapter, &mFeatures);
-        vkGetPhysicalDeviceMemoryProperties2(chosenAdapter, &mMemProperties);
 
         VkDeviceQueueInfo2 queueInfo = {};
         queueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_INFO_2;
@@ -197,7 +192,7 @@ namespace Hadron {
     Device::Device(Device&& other) noexcept
         : mInstance(std::move(other.mInstance)), mDevice(other.mDevice),
             mPool(other.mPool), mQueue(other.mQueue), mQueueFamilyIndex(other.mQueueFamilyIndex),
-            mMemProperties(other.mMemProperties), mFeatures(other.mFeatures), mProperties(other.mProperties)
+            mPhysicalDevice(other.mPhysicalDevice)
     {
         other.mDevice = VK_NULL_HANDLE;
         other.mPool = VK_NULL_HANDLE;
@@ -266,16 +261,8 @@ namespace Hadron {
         return mPool;
     }
 
-    VkPhysicalDeviceProperties2 Device::properties() {
-        return mProperties;
-    }
-
-    VkPhysicalDeviceFeatures2 Device::features() {
-        return mFeatures;
-    }
-
-    VkPhysicalDeviceMemoryProperties2 Device::memProperties() {
-        return mMemProperties;
+    VkPhysicalDevice Device::physicalDevice() {
+        return mPhysicalDevice;
     }
 
     Slang::ComPtr<slang::ISession>& Device::localSlangSession() {

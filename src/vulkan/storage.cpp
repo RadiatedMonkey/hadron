@@ -5,7 +5,7 @@
 #include <volk.h>
 
 namespace Hadron {
-    uint32_t findMemoryType(uint32_t typeBits, VkPhysicalDeviceMemoryProperties memProperties, VkMemoryPropertyFlags propertyFlags) {
+    uint32_t findMemoryType(uint32_t typeBits, const VkPhysicalDeviceMemoryProperties& memProperties, VkMemoryPropertyFlags propertyFlags) {
         for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
             bool hardwareSupported = typeBits & (1 << i);
             bool hasFlags = (memProperties.memoryTypes[i].propertyFlags & propertyFlags) == propertyFlags;
@@ -44,9 +44,12 @@ namespace Hadron {
 
         vkGetBufferMemoryRequirements2(mDevice->handle(), &memReqInfo, &memReqs);
 
+        VkPhysicalDeviceMemoryProperties memProps;
+        vkGetPhysicalDeviceMemoryProperties(mDevice->physicalDevice(), &memProps);
+
         uint32_t memoryTypeIndex = findMemoryType(
             memReqs.memoryRequirements.memoryTypeBits,
-            mDevice->memProperties().memoryProperties,
+            memProps,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
         );
 

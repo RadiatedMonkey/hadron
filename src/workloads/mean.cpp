@@ -20,7 +20,8 @@ struct RandConstants {
 
 struct MeanConstants {
     VkDeviceAddress randBuffer;
-    uint32_t bufferSize;
+    VkDeviceAddress meanBuffer;
+    uint32_t randBufferSize;
     uint32_t dispatched;
 };
 
@@ -67,7 +68,8 @@ namespace Hadron::Workload {
         pipelineConfig.shaderConfig.moduleName = MEAN_PATH;
         auto meanPipeline = info.device->createPipeline(pipelineConfig);
 
-        auto scratchBuffer = info.device->createStorageBuffer<double>(NUM_COUNT, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+        auto inputBuffer = info.device->createStorageBuffer<double>(NUM_COUNT, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+        auto outputBuffer = info.device->createStorageBuffer<double>(NUM_COUNT / WORKGROUP_SIZE, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
         auto hostRngBuffer = info.device->createHostBuffer<double>(NUM_COUNT, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
         auto hostMeanBuffer = info.device->createHostBuffer<double>(DISPATCH_COUNT, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
@@ -77,7 +79,7 @@ namespace Hadron::Workload {
             .seed = seed,
             .numCount = NUM_COUNT,
             .dispatched = DISPATCH_COUNT * WORKGROUP_SIZE,
-            .outBuffer = scratchBuffer->address()
+            .outBuffer = inputBuffer->address()
         };
 
         vkCmdBindPipeline(cmds.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, randPipeline->handle());
@@ -93,7 +95,7 @@ namespace Hadron::Workload {
         barrier.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT;
         barrier.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
         barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT | VK_ACCESS_2_SHADER_WRITE_BIT;
-        barrier.buffer = scratchBuffer->handle();
+        barrier.buffer = inputBuffer->handle();
         barrier.size = VK_WHOLE_SIZE;
 
         /// Barrier waiting for rng results before copying to host buffer.
@@ -103,7 +105,7 @@ namespace Hadron::Workload {
         hostBarrier.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT;
         hostBarrier.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
         hostBarrier.dstAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;
-        hostBarrier.buffer = scratchBuffer->handle();
+        hostBarrier.buffer = inputBuffer->handle();
         hostBarrier.size = VK_WHOLE_SIZE;
 
         VkBufferMemoryBarrier2 barriers[] = { barrier, hostBarrier };
@@ -121,7 +123,7 @@ namespace Hadron::Workload {
 
         VkCopyBufferInfo2 copyInfo = {};
         copyInfo.sType = VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2;
-        copyInfo.srcBuffer = scratchBuffer->handle();
+        copyInfo.srcBuffer = inputBuffer->handle();
         copyInfo.dstBuffer = hostRngBuffer->handle();
         copyInfo.regionCount = 1;
         copyInfo.pRegions = &copyRegion;
@@ -129,8 +131,9 @@ namespace Hadron::Workload {
         vkCmdCopyBuffer2(cmds.handle(), &copyInfo);
 
         MeanConstants meanConstants = {
-            .randBuffer = scratchBuffer->address(),
-            .bufferSize = NUM_COUNT,
+            .randBuffer = inputBuffer->address(),
+            .meanBuffer = outputBuffer->address(),
+            .randBufferSize = NUM_COUNT,
             .dispatched = DISPATCH_COUNT * WORKGROUP_SIZE
         };
 
@@ -146,7 +149,7 @@ namespace Hadron::Workload {
         meanBarrier.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT;
         meanBarrier.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
         meanBarrier.dstAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;
-        meanBarrier.buffer = scratchBuffer->handle();
+        meanBarrier.buffer = outputBuffer->handle();
         meanBarrier.size = VK_WHOLE_SIZE;
 
         depInfo.bufferMemoryBarrierCount = 1;
@@ -156,7 +159,7 @@ namespace Hadron::Workload {
 
         copyRegion.size = DISPATCH_COUNT * sizeof(double);
 
-        copyInfo.srcBuffer = scratchBuffer->handle();
+        copyInfo.srcBuffer = outputBuffer->handle();
         copyInfo.dstBuffer = hostMeanBuffer->handle();
         copyInfo.regionCount = 1;
         copyInfo.pRegions = &copyRegion;
