@@ -16,24 +16,20 @@ static const uint MAX_WAVES_PER_WORKGROUP = WORKGROUP_SIZE / MIN_WAVE_SIZE;
 
 groupshared Scalar sdata[MAX_WAVES_PER_WORKGROUP];
 
-[[shader("compute")]]
-[[numthreads(WORKGROUP_SIZE, 1, 1)]]
-void main(
-    uint3 dispatchThreadID: SV_DispatchThreadID,
-    uint3 groupThreadID: SV_GroupThreadID,
-    uint3 groupID: SV_GroupID
+void computeWorkgroupMeans(
+    uint dispatchThreadID, uint groupThreadID, uint groupID,
+    Scalar* inBuffer, Scalar* outBuffer, uint bufferSize
 ) {
-    // =================================================================
-    // Reduction on local waves
+    // Perform reduction per wave.
 
     uint stride = params.dispatchedThreads;
 
     Scalar curr = 0.0f;
-    for (uint i = dispatchThreadID.x; i < params.inputBufferSize; i += stride) {
-        curr += params.inputBuffer[i];
+    for (uint i = dispatchThreadID; i < bufferSize; i += stride) {
+        curr += inBuffer[i];
     }
 
-    uint waveIndex = groupThreadID.x / WaveGetLaneCount();
+    uint waveIndex = groupThreadID / WaveGetLaneCount();
 
     curr = WaveActiveSum(curr);
     if (WaveIsFirstLane()) {
@@ -42,15 +38,29 @@ void main(
 
     GroupMemoryBarrierWithGroupSync();
 
-    // ================================================================
-    // Reduction on entire group (done by first wave in the group)
+    // Perform reduction on entire workgroup
+    // Done by wave 0
 
     if (waveIndex == 0) {
         curr = (WaveGetLaneIndex() < WaveGetNumWaves()) ? sdata[WaveGetLaneIndex()] : 0.0;
         curr = WaveActiveSum(curr);
 
         if (WaveIsFirstLane()) {
-            params.outputBuffer[groupID.x] = curr / WORKGROUP_SIZE;
+            static const Scalar INV_WORKGROUP_SIZE = 1.0 / Scalar(WORKGROUP_SIZE);
+            outBuffer[groupID.x] = curr * INV_WORKGROUP_SIZE;
         }
     }
+}
+
+[[shader("compute")]]
+[[numthreads(WORKGROUP_SIZE, 1, 1)]]
+void main(
+    uint3 dispatchThreadID: SV_DispatchThreadID,
+    uint3 groupThreadID: SV_GroupThreadID,
+    uint3 groupID: SV_GroupID
+) {
+    computeWorkgroupMeans(
+        dispatchThreadID.x, groupThreadID.x, groupID.x,
+        params.inputBuffer, params.outputBuffer, params.inputBufferSize
+    );
 }

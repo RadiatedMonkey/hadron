@@ -5,5 +5,5 @@
 namespace Hadron::Workload {
     struct WorkloadInfo;
 
-    void computeUniformMean(const WorkloadInfo& info, uint64_t seed);
+    void computeUniformStats(const WorkloadInfo& info, uint64_t seed);
 }

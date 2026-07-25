@@ -1,6 +1,6 @@
 #include <hadron/vulkan/instance.hpp>
 #include <hadron/vulkan/device.hpp>
-#include <hadron/workloads/mean.hpp>
+#include <hadron/workloads/stats.hpp>
 #include <hadron/workloads/workload.hpp>
 
 #include <spdlog/spdlog.h>
@@ -20,7 +20,7 @@ int main() {
             .device = device
         };
 
-        Hadron::Workload::computeUniformMean(info, 0);
+        Hadron::Workload::computeUniformStats(info, 0);
     } catch(const std::exception& e) {
         spdlog::error("exception: {}", e.what());
         return 1;

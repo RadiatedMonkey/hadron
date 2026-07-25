@@ -1,4 +1,4 @@
-#include <hadron/workloads/mean.hpp>
+#include <hadron/workloads/stats.hpp>
 #include <hadron/workloads/workload.hpp>
 #include <hadron/vulkan/device.hpp>
 #include <hadron/vulkan/pipeline.hpp>
@@ -10,6 +10,7 @@
 #include <iostream>
 
 #include <volk.h>
+#include <vulkan/vulkan_core.h>
 
 struct RandConstants {
     uint64_t seed;
@@ -21,6 +22,14 @@ struct RandConstants {
 struct MeanConstants {
     VkDeviceAddress randBuffer;
     VkDeviceAddress meanBuffer;
+    uint32_t randBufferSize;
+    uint32_t dispatched;
+};
+
+struct VarConstants {
+    VkDeviceAddress randBuffer;
+    VkDeviceAddress meanBuffer;
+    VkDeviceAddress varBuffer;
     uint32_t randBufferSize;
     uint32_t dispatched;
 };
@@ -52,9 +61,10 @@ namespace Hadron::Workload {
         std::cout << "Expected average of " << static_cast<double>(NUM_COUNT) / static_cast<double>(BUCKET_COUNT) << " per bucket" << std::endl;
     }
 
-    void computeUniformMean(const WorkloadInfo& info, uint64_t seed) {
+    void computeUniformStats(const WorkloadInfo& info, uint64_t seed) {
         static constexpr const char* RAND_PATH = SOURCE_DIR "/src/shaders/workloads/rand";
         static constexpr const char* MEAN_PATH = SOURCE_DIR "/src/shaders/workloads/mean";
+        static constexpr const char* VAR_PATH = SOURCE_DIR "/src/shaders/workloads/variance";
 
         PipelineConfig pipelineConfig = {
             .shaderConfig = { .moduleName = RAND_PATH, .entryPoint = nullptr }
@@ -68,10 +78,15 @@ namespace Hadron::Workload {
         pipelineConfig.shaderConfig.moduleName = MEAN_PATH;
         auto meanPipeline = info.device->createPipeline(pipelineConfig);
 
+        pipelineConfig.shaderConfig.moduleName = VAR_PATH;
+        auto varPipeline = info.device->createPipeline(pipelineConfig);
+
         auto inputBuffer = info.device->createStorageBuffer<double>(NUM_COUNT, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
-        auto outputBuffer = info.device->createStorageBuffer<double>(NUM_COUNT / WORKGROUP_SIZE, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+        auto meanOutputBuffer = info.device->createStorageBuffer<double>(NUM_COUNT / WORKGROUP_SIZE, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+        auto varOutputBuffer = info.device->createStorageBuffer<double>(NUM_COUNT / WORKGROUP_SIZE, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
         auto hostRngBuffer = info.device->createHostBuffer<double>(NUM_COUNT, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
         auto hostMeanBuffer = info.device->createHostBuffer<double>(DISPATCH_COUNT, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+        auto hostVarBuffer = info.device->createHostBuffer<double>(DISPATCH_COUNT, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
         cmds.begin();
 
@@ -132,7 +147,7 @@ namespace Hadron::Workload {
 
         MeanConstants meanConstants = {
             .randBuffer = inputBuffer->address(),
-            .meanBuffer = outputBuffer->address(),
+            .meanBuffer = meanOutputBuffer->address(),
             .randBufferSize = NUM_COUNT,
             .dispatched = DISPATCH_COUNT * WORKGROUP_SIZE
         };
@@ -149,20 +164,62 @@ namespace Hadron::Workload {
         meanBarrier.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT;
         meanBarrier.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
         meanBarrier.dstAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;
-        meanBarrier.buffer = outputBuffer->handle();
+        meanBarrier.buffer = meanOutputBuffer->handle();
         meanBarrier.size = VK_WHOLE_SIZE;
 
-        depInfo.bufferMemoryBarrierCount = 1;
-        depInfo.pBufferMemoryBarriers = &meanBarrier;
+        VkBufferMemoryBarrier2 meanToVarBarrier = {};
+        meanToVarBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2;
+        meanToVarBarrier.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+        meanToVarBarrier.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT;
+        meanToVarBarrier.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+        meanToVarBarrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
+        meanToVarBarrier.buffer = meanOutputBuffer->handle();
+        meanToVarBarrier.size = VK_WHOLE_SIZE;
+
+        std::array<VkBufferMemoryBarrier2, 2> meanBarriers = { meanBarrier, meanToVarBarrier };
+
+        depInfo.bufferMemoryBarrierCount = meanBarriers.size();
+        depInfo.pBufferMemoryBarriers = meanBarriers.data();
 
         vkCmdPipelineBarrier2(cmds.handle(), &depInfo);
 
         copyRegion.size = DISPATCH_COUNT * sizeof(double);
 
-        copyInfo.srcBuffer = outputBuffer->handle();
+        copyInfo.srcBuffer = meanOutputBuffer->handle();
         copyInfo.dstBuffer = hostMeanBuffer->handle();
         copyInfo.regionCount = 1;
         copyInfo.pRegions = &copyRegion;
+
+        vkCmdCopyBuffer2(cmds.handle(), &copyInfo);
+
+        VarConstants varConstants = {
+            .randBuffer = inputBuffer->address(),
+            .meanBuffer = meanOutputBuffer->address(),
+            .varBuffer = varOutputBuffer->address(),
+            .randBufferSize = NUM_COUNT,
+            .dispatched = DISPATCH_COUNT * WORKGROUP_SIZE
+        };
+
+        vkCmdBindPipeline(cmds.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, varPipeline->handle());
+        vkCmdPushConstants(cmds.handle(), varPipeline->layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(VarConstants), &varConstants);
+        vkCmdDispatch(cmds.handle(), DISPATCH_COUNT, 1, 1);
+
+        VkBufferMemoryBarrier2 varBarrier = {};
+        varBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2;
+        varBarrier.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+        varBarrier.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT;
+        varBarrier.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+        varBarrier.dstAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;
+        varBarrier.buffer = varOutputBuffer->handle();
+        varBarrier.size = VK_WHOLE_SIZE;
+
+        depInfo.bufferMemoryBarrierCount = 1;
+        depInfo.pBufferMemoryBarriers = &varBarrier;
+
+        vkCmdPipelineBarrier2(cmds.handle(), &depInfo);
+
+        copyInfo.srcBuffer = varOutputBuffer->handle();
+        copyInfo.dstBuffer = hostVarBuffer->handle();
 
         vkCmdCopyBuffer2(cmds.handle(), &copyInfo);
 
@@ -201,5 +258,16 @@ namespace Hadron::Workload {
         for (double mean : meanData) {
             spdlog::info("mean for block is {}", mean);
         }
+
+        auto mappedVar = hostVarBuffer->map();
+        std::array<double, DISPATCH_COUNT> varData;
+        std::memcpy(varData.data(), mappedVar.get(), DISPATCH_COUNT * sizeof(double));
+
+        double summedVars = 0.0;
+        for (double var : varData) {
+            summedVars += var;
+        }
+
+        spdlog::info("Total var is: {}", summedVars / (NUM_COUNT - 1));
     }
 }

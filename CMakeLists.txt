@@ -44,7 +44,7 @@ set(SOURCES
     src/vulkan/shader.cpp
 
     src/workloads/rand.cpp
-    src/workloads/mean.cpp
+    src/workloads/stats.cpp
 )
 
 add_executable(hadron ${SOURCES})
