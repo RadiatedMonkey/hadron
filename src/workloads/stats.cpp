@@ -35,12 +35,13 @@ struct VarConstants {
 };
 
 namespace Hadron::Workload {
-    static constexpr uint32_t NUM_COUNT = 4096;
+    static constexpr uint32_t NUM_COUNT = 2097152;
     static constexpr uint32_t WORKGROUP_SIZE = 256;
-    static constexpr uint32_t DISPATCH_COUNT = (NUM_COUNT + WORKGROUP_SIZE - 1) / WORKGROUP_SIZE;
+    static constexpr uint32_t REDUCTIONS_PER_THREAD = 128;
+    static constexpr uint32_t DISPATCH_COUNT = (NUM_COUNT + WORKGROUP_SIZE - 1) / (WORKGROUP_SIZE * REDUCTIONS_PER_THREAD);
 
-    template<typename T, size_t N> requires std::is_floating_point_v<T>
-    void printBuckets(const std::array<T, N>& results) {
+    template<typename T> requires std::is_floating_point_v<T>
+    void printBuckets(const std::vector<T>& results) {
         static constexpr size_t BUCKET_COUNT = 10;
 
         std::array<uint32_t, BUCKET_COUNT> buckets = {};
@@ -240,10 +241,10 @@ namespace Hadron::Workload {
         fence.await();
 
         auto mappedRng = hostRngBuffer->map();
-        std::array<double, NUM_COUNT> randData = {};
+        std::vector<double> randData(NUM_COUNT);
         std::memcpy(randData.data(), mappedRng.get(), NUM_COUNT * sizeof(double));
 
-        printBuckets(randData);
+        // printBuckets(randData);
 
         auto mappedMean = hostMeanBuffer->map();
         std::array<double, DISPATCH_COUNT> meanData = {};

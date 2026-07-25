@@ -22,6 +22,7 @@ void computeWorkgroupMeans(
 ) {
     // Perform reduction per wave.
 
+    uint reductionsPerThread = bufferSize / params.dispatchedThreads;
     uint stride = params.dispatchedThreads;
 
     Scalar curr = 0.0f;
@@ -46,8 +47,7 @@ void computeWorkgroupMeans(
         curr = WaveActiveSum(curr);
 
         if (WaveIsFirstLane()) {
-            static const Scalar INV_WORKGROUP_SIZE = 1.0 / Scalar(WORKGROUP_SIZE);
-            outBuffer[groupID.x] = curr * INV_WORKGROUP_SIZE;
+            outBuffer[groupID.x] = curr  / (WORKGROUP_SIZE * reductionsPerThread);
         }
     }
 }
