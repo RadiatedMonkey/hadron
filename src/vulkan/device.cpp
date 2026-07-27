@@ -67,26 +67,31 @@ namespace Hadron {
 
         float queuePriority = 1.0f;
 
-        VkDeviceQueueCreateInfo queueCi = {};
-        queueCi.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-        queueCi.queueFamilyIndex = mQueueFamilyIndex;
-        queueCi.queueCount = 1;
-        queueCi.pQueuePriorities = &queuePriority;
+        VkDeviceQueueCreateInfo queueCi = {
+            .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+            .queueFamilyIndex = mQueueFamilyIndex,
+            .queueCount = 1,
+            .pQueuePriorities = &queuePriority
+        };
 
-        VkPhysicalDeviceDescriptorIndexingFeatures descriptorFeatures = {};
-        descriptorFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
+        VkPhysicalDeviceDescriptorIndexingFeatures descriptorFeatures = {
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES
+        };
 
-        VkPhysicalDeviceSynchronization2Features sync2Features = {};
-        sync2Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES;
-        sync2Features.pNext = &descriptorFeatures;
+        VkPhysicalDeviceSynchronization2Features sync2Features = {
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES,
+            .pNext = &descriptorFeatures
+        };
 
-        VkPhysicalDeviceBufferDeviceAddressFeatures addressFeatures = {};
-        addressFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
-        addressFeatures.pNext = &sync2Features;
+        VkPhysicalDeviceBufferDeviceAddressFeatures addressFeatures = {
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES,
+            .pNext = &sync2Features
+        };
 
-        VkPhysicalDeviceFeatures2 enabledFeatures = {};
-        enabledFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-        enabledFeatures.pNext = &addressFeatures;
+        VkPhysicalDeviceFeatures2 enabledFeatures = {
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
+            .pNext = &addressFeatures
+        };
 
         vkGetPhysicalDeviceFeatures2(chosenAdapter, &enabledFeatures);
 
@@ -116,14 +121,15 @@ namespace Hadron {
 
         spdlog::trace("Adapter supports bindless descriptor sets");
 
-        VkDeviceCreateInfo deviceCi = {};
-        deviceCi.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-        deviceCi.queueCreateInfoCount = 1;
-        deviceCi.pQueueCreateInfos = &queueCi;
-        deviceCi.enabledExtensionCount = kDeviceExtensions.size();
-        deviceCi.ppEnabledExtensionNames = kDeviceExtensions.data();
-        deviceCi.enabledLayerCount = 0; // Device layers are deprecated
-        deviceCi.pNext = &enabledFeatures;
+        VkDeviceCreateInfo deviceCi = {
+            .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+            .pNext = &enabledFeatures,
+            .queueCreateInfoCount = 1,
+            .pQueueCreateInfos = &queueCi,
+            .enabledLayerCount = 0,
+            .enabledExtensionCount = kDeviceExtensions.size(),
+            .ppEnabledExtensionNames = kDeviceExtensions.data(),
+        };
 
         LOG_VKRESULT(
             vkCreateDevice(chosenAdapter, &deviceCi, nullptr, &mDevice),
@@ -132,18 +138,21 @@ namespace Hadron {
 
         spdlog::debug("Created device");
 
-        VkDeviceQueueInfo2 queueInfo = {};
-        queueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_INFO_2;
-        queueInfo.queueFamilyIndex = mQueueFamilyIndex;
-        queueInfo.queueIndex = 0;
+        VkDeviceQueueInfo2 queueInfo = {
+            .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_INFO_2,
+            .queueFamilyIndex = mQueueFamilyIndex,
+            .queueIndex = 0
+        };
 
         vkGetDeviceQueue2(mDevice, &queueInfo, &mQueue);
 
         spdlog::debug("Created logical device");
 
-        VkCommandPoolCreateInfo poolCi = {};
-        poolCi.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-        poolCi.queueFamilyIndex = mQueueFamilyIndex;
+        VkCommandPoolCreateInfo poolCi = {
+            .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+            .flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT,              // Many short-lived command buffers
+            .queueFamilyIndex = mQueueFamilyIndex
+        };
 
         CHECK_VKRESULT(
             vkCreateCommandPool(mDevice, &poolCi, nullptr, &mPool),
@@ -166,17 +175,19 @@ namespace Hadron {
 
         spdlog::trace("Created global Slang session");
 
-        slang::TargetDesc shaderTarget = {};
-        shaderTarget.format = SLANG_SPIRV;
-        shaderTarget.floatingPointMode = SlangFloatingPointMode::SLANG_FLOATING_POINT_MODE_PRECISE;
-        shaderTarget.profile = mGlobalSession->findProfile("glsl_450");
+        slang::TargetDesc shaderTarget = {
+            .format = SLANG_SPIRV,
+            .profile = mGlobalSession->findProfile("glsl_450"),
+            .floatingPointMode = SlangFloatingPointMode::SLANG_FLOATING_POINT_MODE_PRECISE,
+        };
 
-        slang::SessionDesc sessionDesc = {};
-        sessionDesc.searchPathCount = kShaderIncludePaths.size();
-        sessionDesc.allowGLSLSyntax = true;
-        sessionDesc.searchPaths = kShaderIncludePaths.data();
-        sessionDesc.targetCount = 1;
-        sessionDesc.targets = &shaderTarget;
+        slang::SessionDesc sessionDesc = {
+            .targets = &shaderTarget,
+            .targetCount = 1,
+            .searchPaths = kShaderIncludePaths.data(),
+            .searchPathCount = kShaderIncludePaths.size(),
+            .allowGLSLSyntax = true,
+        };
 
         CHECK_SRESULT(
             mGlobalSession->createSession(sessionDesc, mLocalSession.writeRef()),
@@ -242,11 +253,12 @@ namespace Hadron {
     Commands Device::createCmdBuffer() {
         assert(mPool != VK_NULL_HANDLE);
 
-        VkCommandBufferAllocateInfo bufferCi = {};
-        bufferCi.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        bufferCi.commandPool = mPool;
-        bufferCi.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        bufferCi.commandBufferCount = 1;
+        VkCommandBufferAllocateInfo bufferCi = {
+            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+            .commandPool = mPool,
+            .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+            .commandBufferCount = 1
+        };
 
         std::shared_ptr<Device> device = shared_from_this();
 
