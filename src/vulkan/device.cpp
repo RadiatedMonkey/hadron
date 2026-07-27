@@ -246,8 +246,8 @@ namespace Hadron {
         return std::shared_ptr<ComputePipeline>(new ComputePipeline(shared_from_this(), config));
     }
 
-    Fence Device::createFence() {
-        return Fence(shared_from_this());
+    Fence Device::createFence(bool signaled) {
+        return Fence(shared_from_this(), signaled);
     }
 
     Commands Device::createCmdBuffer() {

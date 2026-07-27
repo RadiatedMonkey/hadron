@@ -47,7 +47,7 @@ namespace Hadron {
         /// @brief The device queue.
         VkQueue queue();
 
-        Fence createFence();
+        Fence createFence(bool signaled = false);
 
         Shader createShader(const ShaderConfig& config);
 

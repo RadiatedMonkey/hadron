@@ -14,9 +14,8 @@ namespace Hadron {
         Commands(const Commands&) = delete;
         ~Commands();
 
-        void begin();
+        void begin(bool oneTimeSubmit = true);
         void end();
-        void reset();
         VkCommandBuffer handle();
 
     private:

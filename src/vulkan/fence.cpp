@@ -4,11 +4,14 @@
 
 #include <volk.h>
 #include <spdlog/spdlog.h>
+#include <vulkan/vulkan_core.h>
 
 namespace Hadron {
-    Fence::Fence(std::shared_ptr<Device> device) : mDevice(std::move(device)) {
-        VkFenceCreateInfo fenceCi = {};
-        fenceCi.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    Fence::Fence(std::shared_ptr<Device> device, bool signaled) : mDevice(std::move(device)) {
+        VkFenceCreateInfo fenceCi = {
+            .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+            .flags = signaled ? VK_FENCE_CREATE_SIGNALED_BIT : 0U
+        };
 
         LOG_VKRESULT(
             vkCreateFence(mDevice->handle(), &fenceCi, nullptr, &mFence),

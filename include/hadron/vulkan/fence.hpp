@@ -22,7 +22,7 @@ namespace Hadron {
     private:
         friend Device;
 
-        Fence(std::shared_ptr<Device> device);
+        Fence(std::shared_ptr<Device> device, bool signaled);
 
         std::shared_ptr<Device> mDevice = nullptr;
         VkFence mFence = VK_NULL_HANDLE;

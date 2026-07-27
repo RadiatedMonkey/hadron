@@ -4,6 +4,7 @@
 
 #include <volk.h>
 #include <spdlog/spdlog.h>
+#include <vulkan/vulkan_core.h>
 
 namespace Hadron {
     VkCommandBuffer Commands::handle() {
@@ -26,23 +27,16 @@ namespace Hadron {
         }
     }
 
-    void Commands::begin() {
-        VkCommandBufferBeginInfo beginInfo = {};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    void Commands::begin(bool oneTimeSubmit) {
+        VkCommandBufferBeginInfo beginInfo = {
+            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+            .flags = oneTimeSubmit ? VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT : 0U
+        };
 
         LOG_VKRESULT(vkBeginCommandBuffer(mBuffer, &beginInfo), "Failed to start command buffer");
     }
 
     void Commands::end() {
         LOG_VKRESULT(vkEndCommandBuffer(mBuffer), "Failed to end command buffer");
-    }
-
-    void Commands::reset() {
-        assert(mBuffer != VK_NULL_HANDLE);
-
-        LOG_VKRESULT(
-            vkResetCommandBuffer(mBuffer, 0),
-            "Failed to reset command buffer"
-        );
     }
 }

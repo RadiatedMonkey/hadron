@@ -7,6 +7,7 @@
 #include <volk.h>
 
 #include <array>
+#include <vulkan/vulkan_core.h>
 
 static constexpr uint32_t MAX_BINDLESS_RESOURCES = 100;
 
@@ -30,17 +31,19 @@ namespace Hadron {
             flags[i] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
         }
 
-        VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlagsCi = {};
-        bindingFlagsCi.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
-        bindingFlagsCi.bindingCount = DESCRIPTOR_TYPE_COUNT;
-        bindingFlagsCi.pBindingFlags = flags.data();
+        VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlagsCi = {
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO,
+            .bindingCount = flags.size(),
+            .pBindingFlags = flags.data()
+        };
 
-        VkDescriptorSetLayoutCreateInfo setLayoutCi = {};
-        setLayoutCi.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-        setLayoutCi.bindingCount = bindings.size();
-        setLayoutCi.pBindings = bindings.data();
-        setLayoutCi.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
-        setLayoutCi.pNext = &bindingFlagsCi;
+        VkDescriptorSetLayoutCreateInfo setLayoutCi = {
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+            .pNext = &bindingFlagsCi,
+            .flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT,
+            .bindingCount = bindings.size(),
+            .pBindings = bindings.data()
+        };
 
         CHECK_VKRESULT(
             vkCreateDescriptorSetLayout(mDevice->handle(), &setLayoutCi, nullptr, &mBindlessLayout),
@@ -58,12 +61,13 @@ namespace Hadron {
             poolSizes[i].descriptorCount = MAX_BINDLESS_RESOURCES;
         }
 
-        VkDescriptorPoolCreateInfo poolCi = {};
-        poolCi.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        poolCi.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;
-        poolCi.poolSizeCount = poolSizes.size();
-        poolCi.pPoolSizes = poolSizes.data();
-        poolCi.maxSets = 1;
+        VkDescriptorPoolCreateInfo poolCi = {
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+            .flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT,
+            .maxSets = 1,
+            .poolSizeCount = poolSizes.size(),
+            .pPoolSizes = poolSizes.data(),
+        };
 
         CHECK_VKRESULT(
             vkCreateDescriptorPool(mDevice->handle(), &poolCi, nullptr, &mDescriptorPool),
@@ -75,11 +79,12 @@ namespace Hadron {
 
         spdlog::debug("Created descriptor pool");
 
-        VkDescriptorSetAllocateInfo allocCi = {};
-        allocCi.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocCi.descriptorPool = mDescriptorPool;
-        allocCi.descriptorSetCount = 1;
-        allocCi.pSetLayouts = &mBindlessLayout;
+        VkDescriptorSetAllocateInfo allocCi = {
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+            .descriptorPool = mDescriptorPool,
+            .descriptorSetCount = 1,
+            .pSetLayouts = &mBindlessLayout
+        };
 
         CHECK_VKRESULT(
             vkAllocateDescriptorSets(mDevice->handle(), &allocCi, &mBindlessSet),
@@ -96,12 +101,13 @@ namespace Hadron {
 
         spdlog::info("Registered {} push constant block(s)", pushConstants.size());
 
-        VkPipelineLayoutCreateInfo layoutCi = {};
-        layoutCi.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        layoutCi.pushConstantRangeCount = pushConstants.size();
-        layoutCi.pPushConstantRanges = pushConstants.data();
-        layoutCi.setLayoutCount = 1;
-        layoutCi.pSetLayouts = &mBindlessLayout;
+        VkPipelineLayoutCreateInfo layoutCi = {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+            .setLayoutCount = 1,
+            .pSetLayouts = &mBindlessLayout,
+            .pushConstantRangeCount = static_cast<uint32_t>(pushConstants.size()),
+            .pPushConstantRanges = pushConstants.data(),
+        };
 
         CHECK_VKRESULT(
             vkCreatePipelineLayout(mDevice->handle(), &layoutCi, nullptr, &mLayout),
@@ -116,16 +122,18 @@ namespace Hadron {
         std::string entryPointName = shader.entryPoint();
         spdlog::debug("Using shader entrypoint \"{}\"", entryPointName);
 
-        VkPipelineShaderStageCreateInfo stageCi = {};
-        stageCi.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        stageCi.module = shader.handle();
-        stageCi.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-        stageCi.pName = entryPointName.c_str();
+        VkPipelineShaderStageCreateInfo stageCi = {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+            .stage = VK_SHADER_STAGE_COMPUTE_BIT,
+            .module = shader.handle(),
+            .pName = entryPointName.c_str(),
+        };
 
-        VkComputePipelineCreateInfo pipelineCi = {};
-        pipelineCi.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
-        pipelineCi.layout = mLayout;
-        pipelineCi.stage = stageCi;
+        VkComputePipelineCreateInfo pipelineCi = {
+            .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
+            .stage = stageCi,
+            .layout = mLayout,
+        };
 
         CHECK_VKRESULT(
             vkCreateComputePipelines(mDevice->handle(), VK_NULL_HANDLE, 1, &pipelineCi, nullptr, &mPipeline),

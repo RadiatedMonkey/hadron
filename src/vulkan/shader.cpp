@@ -110,10 +110,11 @@ namespace Hadron {
 
         spdlog::trace("Loaded program layout");
 
-        VkShaderModuleCreateInfo moduleCi = {};
-        moduleCi.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-        moduleCi.codeSize = spirvCode->getBufferSize();
-        moduleCi.pCode = reinterpret_cast<const uint32_t*>(spirvCode->getBufferPointer());
+        VkShaderModuleCreateInfo moduleCi = {
+            .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+            .codeSize = spirvCode->getBufferSize(),
+            .pCode = reinterpret_cast<const uint32_t*>(spirvCode->getBufferPointer())
+        };
 
         LOG_VKRESULT(
             vkCreateShaderModule(mDevice->handle(), &moduleCi, nullptr, &mModule),
@@ -169,10 +170,11 @@ namespace Hadron {
                 slang::TypeLayoutReflection* elementLayout = typeLayout->getElementTypeLayout();
                 size_t size = elementLayout->getSize(slang::ParameterCategory::Uniform);
 
-                VkPushConstantRange constant = {};
-                constant.offset = offset;
-                constant.size = size;
-                constant.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+                VkPushConstantRange constant = {
+                    .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+                    .offset = static_cast<uint32_t>(offset),
+                    .size = static_cast<uint32_t>(size),
+                };
 
                 pushConstants.push_back(constant);
             }

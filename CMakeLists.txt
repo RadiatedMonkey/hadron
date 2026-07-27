@@ -28,6 +28,7 @@ set(GLFW_BUILD_TESTS    OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_DOCS     OFF CACHE BOOL "" FORCE)
 set(GLFW_INSTALL        OFF CACHE BOOL "" FORCE)
 
+CPMAddPackage("gh:GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator#3aa9212@v3.4.0")
 CPMAddPackage("gh:gabime/spdlog#79524dd@v1.17.0")
 CPMAddPackage("gh:shader-slang/slang#4265906@v2026.14")
 CPMAddPackage("gh:glfw/glfw#7b6aead@3.4")
@@ -50,4 +51,4 @@ set(SOURCES
 add_executable(hadron ${SOURCES})
 target_include_directories(hadron PRIVATE include)
 target_compile_definitions(hadron PRIVATE SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
-target_link_libraries(hadron PRIVATE volk glfw spdlog slang)
+target_link_libraries(hadron PRIVATE volk glfw spdlog slang GPUOpen::VulkanMemoryAllocator)
