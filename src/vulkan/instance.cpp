@@ -6,6 +6,7 @@
 
 #include <volk.h>
 #include <spdlog/spdlog.h>
+#include <vulkan/vulkan_core.h>
 
 namespace Hadron {
     unsigned int debugCallback(
@@ -23,14 +24,18 @@ namespace Hadron {
         return VK_FALSE;
     }
 
-    static constexpr const char* ENABLED_INSTANCE_EXTENSIONS[] = {
+    static constexpr std::array<const char*, 3> kEnabledInstanceExtensions = {
         VK_KHR_SURFACE_EXTENSION_NAME,
         VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
         VK_EXT_DEBUG_UTILS_EXTENSION_NAME
     };
 
-    static constexpr const char* ENABLED_INSTANCE_LAYERS[] = {
+    static constexpr std::array<const char*, 1> kEnabledInstanceLayers = {
         "VK_LAYER_KHRONOS_validation"
+    };
+
+    static constexpr std::array<VkValidationFeatureEnableEXT, 1> kValidationFeatures = {
+        VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT
     };
 
     std::shared_ptr<Instance> Instance::create() {
@@ -44,27 +49,30 @@ namespace Hadron {
             throw std::runtime_error("volkInitialize failed");
         }
 
-        VkApplicationInfo appInfo = {};
-        appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-        appInfo.pApplicationName = "Compute";
-        appInfo.applicationVersion = 1;
-        appInfo.apiVersion = VK_API_VERSION_1_3;
+        VkApplicationInfo appInfo = {
+            .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
+            .pApplicationName = "Hadron",
+            .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
+            .pEngineName = "Hadron",
+            .engineVersion = VK_MAKE_VERSION(1, 0, 0),
+            .apiVersion = VK_API_VERSION_1_3
+        };
 
-        VkValidationFeatureEnableEXT printFeature = VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT;
+        VkValidationFeaturesEXT validationFeatures = {
+            .sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT,
+            .enabledValidationFeatureCount = kValidationFeatures.size(),
+            .pEnabledValidationFeatures = kValidationFeatures.data()
+        };
 
-        VkValidationFeaturesEXT validationFeatures = {};
-        validationFeatures.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
-        validationFeatures.enabledValidationFeatureCount = 1;
-        validationFeatures.pEnabledValidationFeatures = &printFeature;
-
-        VkInstanceCreateInfo instanceCi = {};
-        instanceCi.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-        instanceCi.pNext = &validationFeatures;
-        instanceCi.enabledExtensionCount = std::size(ENABLED_INSTANCE_EXTENSIONS);
-        instanceCi.ppEnabledExtensionNames = ENABLED_INSTANCE_EXTENSIONS;
-        instanceCi.enabledLayerCount = std::size(ENABLED_INSTANCE_LAYERS);
-        instanceCi.ppEnabledLayerNames = ENABLED_INSTANCE_LAYERS;
-        instanceCi.pApplicationInfo = &appInfo;
+        VkInstanceCreateInfo instanceCi = {
+            .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+            .pNext = &validationFeatures,
+            .pApplicationInfo = &appInfo,
+            .enabledLayerCount = kEnabledInstanceLayers.size(),
+            .ppEnabledLayerNames = kEnabledInstanceLayers.data(),
+            .enabledExtensionCount = kEnabledInstanceExtensions.size(),
+            .ppEnabledExtensionNames = kEnabledInstanceExtensions.data()
+        };
 
         result = vkCreateInstance(&instanceCi, nullptr, &mInstance);
         if (result != VK_SUCCESS) {
@@ -76,17 +84,16 @@ namespace Hadron {
 
         spdlog::debug("Created instance");
 
-        VkDebugUtilsMessengerCreateInfoEXT debugCi = {};
-        debugCi.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-        debugCi.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT
-            | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT
-            | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
-
-        debugCi.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT
-            | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT
-            | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
-
-        debugCi.pfnUserCallback = debugCallback;
+        VkDebugUtilsMessengerCreateInfoEXT debugCi = {
+            .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
+            .messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT
+                | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT
+                | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT,
+            .messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT
+                | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT
+                | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT,
+            .pfnUserCallback = debugCallback
+        };
 
         CHECK_VKRESULT(
             vkCreateDebugUtilsMessengerEXT(mInstance, &debugCi, nullptr, &mDebug),
